@@ -1,8 +1,30 @@
-import { Game, WEBGL, GameObjects, Scene, Physics, Input } from 'phaser'
+import { Game, WEBGL, GameObjects, Scene, Physics, Input, Math as PhaserMath } from 'phaser'
+
+const pauseDialog = document.querySelector('#pause-dialog') as HTMLDialogElement
+const pauseDialogTitle = document.querySelector('#pause-dialog .title') as HTMLHeadingElement
+const pauseDialogButton = document.querySelector('#pause-dialog .main-button') as HTMLButtonElement
+
+type PauseReason = 'initial-screen' | 'pause' | 'game-win' | 'game-loose'
+
+// Phaser intercepts keydown events so that esc doesn't work by default (preventDefault)
+// So we listen to keydown instead of cancel
+let shouldEscUnPause = false
+pauseDialog.addEventListener('keydown', (ev) => {
+	if (shouldEscUnPause && ev.key === 'Escape') {
+		pauseDialog.close()
+	}
+})
+
+pauseDialogButton.addEventListener('click', () => pauseDialog.close())
+
+let onClosePauseDialog: Function
+pauseDialog.addEventListener('close', () => onClosePauseDialog())
 
 const BLOCK_SIZE = 50
 
 class MainScene extends Scene {
+	shouldShowStartGame = true
+
 	player: GameObjects.Rectangle
 	playerSpeed = 200
 
@@ -10,12 +32,15 @@ class MainScene extends Scene {
 	spawnBlockEvent: Phaser.Time.TimerEvent
 
 	blockColliderGroup: Physics.Arcade.Group
+	keyboardInputs: { a: Input.Keyboard.Key; d: Input.Keyboard.Key; space: Input.Keyboard.Key }
 
 	constructor() {
 		super('Main')
 	}
 
 	create() {
+		// Don't do check top collision since we're dropping blocks from the top
+		this.physics.world.checkCollision.up = false
 		this.blockColliderGroup = this.physics.add.group()
 		this.physics.add.collider(this.blockColliderGroup, this.blockColliderGroup)
 
@@ -27,9 +52,21 @@ class MainScene extends Scene {
 			100,
 			0x8fbc8f
 		)
-		this.blockColliderGroup.add(this.player)
+		this.physics.add.existing(this.player)
 		const playerBody = this.player.body as Physics.Arcade.Body
 		playerBody.setGravityY(3000)
+		playerBody.setCollideWorldBounds(true)
+		this.physics.add.collider(this.player, this.blockColliderGroup, (player, block) => {
+			const _player = player as GameObjects.Rectangle
+			const _block = block as GameObjects.Rectangle
+			const directionRad = PhaserMath.Angle.BetweenPoints(
+				_player.getTopCenter(),
+				_block.getBottomCenter()
+			)
+			if (directionRad > -Math.PI && directionRad < 0) {
+				this.pause('game-loose')
+			}
+		})
 		this.add.existing(this.player)
 
 		// Bug: https://github.com/photonstorm/phaser/issues/6630
@@ -39,16 +76,18 @@ class MainScene extends Scene {
 		// 	this.game.canvas.width,
 		// 	1
 		// )
-		const bottom = new GameObjects.Rectangle(
+		const top = new GameObjects.Rectangle(
 			this,
 			this.cameras.main.centerX,
-			this.game.canvas.height,
+			0,
 			this.game.canvas.width,
 			1
 		)
-		this.physics.add.existing(bottom, true)
-		this.physics.add.collider(this.blockColliderGroup, bottom)
-		this.add.existing(bottom)
+		this.physics.add.existing(top, true)
+		this.physics.add.collider(this.player, top, () => {
+			this.pause('game-win')
+		})
+		this.add.existing(top)
 
 		this.spawnBlockEvent = this.time.addEvent({
 			loop: true,
@@ -57,22 +96,33 @@ class MainScene extends Scene {
 		})
 		this.spawnBlock()
 
-		this.handleInput()
+		const keyboard = this.input.keyboard!
+		this.keyboardInputs = {
+			a: keyboard.addKey(Input.Keyboard.KeyCodes.A),
+			d: keyboard.addKey(Input.Keyboard.KeyCodes.D),
+			space: keyboard.addKey(Input.Keyboard.KeyCodes.SPACE),
+		}
+
+		keyboard.addKey(Input.Keyboard.KeyCodes.ESC).on('down', () => {
+			this.pause('pause')
+		})
+		if (this.shouldShowStartGame) {
+			this.shouldShowStartGame = false
+			this.pause('initial-screen')
+		}
 	}
 
 	update(time: number, deltaMs: number) {
-		// console.log(delta)
-		const keyboard = this.input.keyboard!
 		const body = this.player.body as Physics.Arcade.Body
-		if (keyboard.checkDown(keyboard.addKey(Input.Keyboard.KeyCodes.A))) {
+		if (this.keyboardInputs.a.isDown) {
 			body.setVelocityX(-this.playerSpeed)
-		} else if (keyboard.checkDown(keyboard.addKey(Input.Keyboard.KeyCodes.D))) {
+		} else if (this.keyboardInputs.d.isDown) {
 			body.setVelocityX(this.playerSpeed)
 		} else {
 			body.setVelocityX(0)
 		}
 
-		if (keyboard.checkDown(keyboard.addKey(Input.Keyboard.KeyCodes.SPACE))) {
+		if (this.keyboardInputs.space.isDown) {
 			if (body.onFloor()) {
 				body.setVelocityY(-1000)
 			}
@@ -93,11 +143,47 @@ class MainScene extends Scene {
 		this.blockColliderGroup.add(rect)
 		const body = rect.body as Physics.Arcade.Body
 		body.pushable = false
+		body.setCollideWorldBounds(true)
 		body.setVelocityY(300)
 		this.add.existing(rect)
 	}
 
-	handleInput() {}
+	pause(reason: PauseReason) {
+		this.scene.pause()
+		shouldEscUnPause = false
+		switch (reason) {
+			case 'initial-screen':
+				pauseDialogTitle.innerText = 'Drop And Climb'
+				pauseDialogButton.innerText = 'Start'
+				onClosePauseDialog = () => {
+					this.scene.resume()
+				}
+				break
+			case 'pause':
+				pauseDialogTitle.innerText = 'Paused'
+				pauseDialogButton.innerText = 'Resume'
+				onClosePauseDialog = () => {
+					this.scene.resume()
+				}
+				shouldEscUnPause = true
+				break
+			case 'game-win':
+				pauseDialogTitle.innerText = 'You Win!'
+				pauseDialogButton.innerText = 'Play Again'
+				onClosePauseDialog = () => {
+					this.scene.restart()
+				}
+				break
+			case 'game-loose':
+				pauseDialogTitle.innerText = 'Game Over!'
+				pauseDialogButton.innerText = 'Play Again'
+				onClosePauseDialog = () => {
+					this.scene.restart()
+				}
+				break
+		}
+		pauseDialog.showModal()
+	}
 }
 
 const game = new Game({

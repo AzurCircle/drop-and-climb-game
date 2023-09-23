@@ -1,14 +1,70 @@
+:root {
+	-webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+
+	--button-normal-color: hsl(204, 85%, 40%);
+	--button-hover-color: hsl(204, 85%, 35%);
+	--button-active-color: hsl(204, 85%, 30%);
+	--half-transparent: rgba(0, 0, 0, 0.5);
+}
+
 body {
-    margin: 0;
+	margin: 0;
+}
+
+dialog {
+	padding: 0;
+	border: none;
+	box-shadow: 0 0 8px var(--half-transparent);
+
+	/* Why you can scroll the content behind the dialog??? */
+	overscroll-behavior: contain;
+}
+dialog::backdrop {
+	background-color: rgba(0, 0, 0, 0.2);
 }
 
 #main {
-    height: 100vh;
-    display: flex;
-    justify-content: center;
+	height: 100vh;
+	display: flex;
+	justify-content: center;
 }
 
 #main-canvas {
-    display: block;
-    margin: 1em;
+	display: block;
+	margin: 1em;
+}
+
+#pause-dialog {
+	width: 500px;
+	background-color: aliceblue;
+}
+
+#pause-dialog > div {
+	margin: 3em;
+	display: grid;
+    justify-content: center;
+	grid-template-rows: 1fr auto;
+	gap: 2em;
+}
+
+#pause-dialog .title {
+	text-align: center;
+}
+
+#pause-dialog .main-button {
+	font-size: 2em;
+	padding: 0.5em 0.8em;
+    border: none;
+	background-color: var(--button-normal-color);
+	color: white;
+	cursor: pointer;
+}
+
+#pause-dialog .main-button:hover {
+	background-color: var(--button-hover-color);
+}
+
+#pause-dialog .main-button:focus {
+    outline: 4px solid var(--button-active-color);
+    outline-offset: -4px;
 }

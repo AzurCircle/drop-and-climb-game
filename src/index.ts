@@ -60,6 +60,8 @@ class MainScene extends Scene {
 			this.blockColliderGroup,
 			this.blockColliderGroup,
 			(block1, block2) => {
+				// Don't know why this solves the problem of player getting stuck between blocks
+				// https://phaser.discourse.group/t/player-sticks-to-walls-when-moving-left-right-while-jump/9173
 				const block1Body = (block1 as GameObjects.Rectangle).body as Physics.Arcade.Body
 				const block2Body = (block2 as GameObjects.Rectangle).body as Physics.Arcade.Body
 				let ignoreCollision = false

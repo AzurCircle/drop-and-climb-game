@@ -42,7 +42,33 @@ class MainScene extends Scene {
 		// Don't do check top collision since we're dropping blocks from the top
 		this.physics.world.checkCollision.up = false
 		this.blockColliderGroup = this.physics.add.group()
-		this.physics.add.collider(this.blockColliderGroup, this.blockColliderGroup)
+		this.physics.add.collider(
+			this.blockColliderGroup,
+			this.blockColliderGroup,
+			(block1, block2) => {
+				const block1Body = (block1 as GameObjects.Rectangle).body as Physics.Arcade.Body
+				const block2Body = (block2 as GameObjects.Rectangle).body as Physics.Arcade.Body
+				let ignoreCollision = false
+				if (block1Body.bottom < 0) {
+					block1.destroy()
+					ignoreCollision = true
+				}
+				if (block2Body.bottom < 0) {
+					block2.destroy()
+					ignoreCollision = true
+				}
+				if (ignoreCollision) {
+					return
+				}
+				if (block1Body.y < block2Body.y) {
+					block1Body.checkCollision.down = false
+					block2Body.checkCollision.up = false
+				} else {
+					block1Body.checkCollision.up = false
+					block2Body.checkCollision.down = false
+				}
+			}
+		)
 
 		this.player = new GameObjects.Rectangle(
 			this,
@@ -57,13 +83,9 @@ class MainScene extends Scene {
 		playerBody.setGravityY(3000)
 		playerBody.setCollideWorldBounds(true)
 		this.physics.add.collider(this.player, this.blockColliderGroup, (player, block) => {
-			const _player = player as GameObjects.Rectangle
-			const _block = block as GameObjects.Rectangle
-			const directionRad = PhaserMath.Angle.BetweenPoints(
-				_player.getTopCenter(),
-				_block.getBottomCenter()
-			)
-			if (directionRad > -Math.PI && directionRad < 0) {
+			const playerBody = (player as GameObjects.Rectangle).body as Physics.Arcade.Body
+			const blockBody = (block as GameObjects.Rectangle).body as Physics.Arcade.Body
+			if (playerBody.top === blockBody.bottom) {
 				this.pause('game-loose')
 			}
 		})

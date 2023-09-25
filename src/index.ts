@@ -225,7 +225,7 @@ class MainScene extends Scene {
 }
 
 const game = new Game({
-	width: 1000,
+	width: 800,
 	height: 600,
 	canvas: document.getElementById('main-canvas') as HTMLCanvasElement,
 	type: WEBGL,

@@ -130,9 +130,9 @@ class MainScene extends Scene {
 		this.spawnBlockEvent = this.time.addEvent({
 			loop: true,
 			delay: this.blockSpawnRate,
-			callback: () => this.spawnBlock(),
+			callback: () => this.spawnBlocks(),
 		})
-		this.spawnBlock()
+		this.spawnBlocks()
 
 		const keyboard = this.input.keyboard!
 		this.keyboardInputs = {
@@ -167,23 +167,26 @@ class MainScene extends Scene {
 		}
 	}
 
-	spawnBlock() {
+	spawnBlocks() {
 		const maxTiles = Math.floor(this.game.canvas.width / BLOCK_SIZE)
-		const rect = new GameObjects.Rectangle(
-			this,
-			(Math.floor(Math.random() * maxTiles) + 0.5) * BLOCK_SIZE,
-			-100,
-			BLOCK_SIZE,
-			BLOCK_SIZE,
-			0x999999
-		)
-		rect.setStrokeStyle(3, 0xffffff)
-		this.blockColliderGroup.add(rect)
-		const body = rect.body as Physics.Arcade.Body
-		body.pushable = false
-		body.setCollideWorldBounds(true)
-		body.setVelocityY(300)
-		this.add.existing(rect)
+		const points = new Set<number>()
+		for (let i = 0; i < 2; i++) {
+			let point: number
+			do {
+				point = (Math.floor(Math.random() * maxTiles) + 0.5) * BLOCK_SIZE
+			} while (points.has(point))
+			points.add(point)
+		}
+		for (const point of points) {
+			const rect = new GameObjects.Rectangle(this, point, -100, BLOCK_SIZE, BLOCK_SIZE, 0x999999)
+			rect.setStrokeStyle(3, 0xffffff)
+			this.blockColliderGroup.add(rect)
+			const body = rect.body as Physics.Arcade.Body
+			body.pushable = false
+			body.setCollideWorldBounds(true)
+			body.setVelocityY(300)
+			this.add.existing(rect)
+		}
 	}
 
 	pause(reason: PauseReason) {

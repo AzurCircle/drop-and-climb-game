@@ -39,10 +39,14 @@ dialog::backdrop {
 	background-color: aliceblue;
 }
 
+#pause-dialog.transparent {
+	opacity: 0.2;
+}
+
 #pause-dialog > div {
 	margin: 3em;
 	display: grid;
-    justify-content: center;
+	justify-content: center;
 	grid-template-rows: 1fr auto;
 	gap: 2em;
 }
@@ -54,7 +58,7 @@ dialog::backdrop {
 #pause-dialog .main-button {
 	font-size: 2em;
 	padding: 0.5em 0.8em;
-    border: none;
+	border: none;
 	background-color: var(--button-normal-color);
 	color: white;
 	cursor: pointer;
@@ -65,6 +69,27 @@ dialog::backdrop {
 }
 
 #pause-dialog .main-button:focus {
-    outline: 4px solid var(--button-active-color);
-    outline-offset: -4px;
+	outline: 4px solid var(--button-active-color);
+	outline-offset: -4px;
+}
+
+#pause-dialog .view-under {
+	position: absolute;
+	top: 1em;
+	right: 1em;
+	width: 3em;
+	height: 3em;
+
+	display: flex;
+	justify-content: center;
+	align-items: center;
+
+	cursor: pointer;
+	border: none;
+	user-select: none;
+	background-color: transparent;
+}
+
+#pause-dialog .view-under:hover {
+	background-color: rgba(0, 0, 0, 0.1);
 }

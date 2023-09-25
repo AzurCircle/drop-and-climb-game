@@ -3,6 +3,9 @@ import { Game, WEBGL, GameObjects, Scene, Physics, Input, Math as PhaserMath } f
 const pauseDialog = document.querySelector('#pause-dialog') as HTMLDialogElement
 const pauseDialogTitle = document.querySelector('#pause-dialog .title') as HTMLHeadingElement
 const pauseDialogButton = document.querySelector('#pause-dialog .main-button') as HTMLButtonElement
+const pauseDialogViewUnder = document.querySelector(
+	'#pause-dialog .view-under'
+) as HTMLButtonElement
 
 type PauseReason = 'initial-screen' | 'pause' | 'game-win' | 'game-loose'
 
@@ -18,7 +21,18 @@ pauseDialog.addEventListener('keydown', (ev) => {
 pauseDialogButton.addEventListener('click', () => pauseDialog.close())
 
 let onClosePauseDialog: Function
-pauseDialog.addEventListener('close', () => onClosePauseDialog())
+pauseDialog.addEventListener('close', () => {
+	onClosePauseDialog()
+	pauseDialog.classList.remove('transparent')
+})
+
+pauseDialogViewUnder.addEventListener('click', () => {
+	if (pauseDialog.classList.contains('transparent')) {
+		pauseDialog.classList.remove('transparent')
+	} else {
+		pauseDialog.classList.add('transparent')
+	}
+})
 
 const BLOCK_SIZE = 50
 
